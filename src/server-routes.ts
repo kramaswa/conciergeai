@@ -1025,14 +1025,14 @@ Output ONLY a valid JSON object. No markdown, no explanation.`,
 
         const maxStar = Math.max(...allowedRatings);
 
-        const minReviews = maxStar >= 5 ? 15 : maxStar >= 4 ? 10 : 0;
+        const minReviews = maxStar >= 5 ? 5 : maxStar >= 4 ? 3 : 0;
         if (minReviews > 0) {
           const b2 = finalHotels.length;
           finalHotels = finalHotels.filter(h => (h.reviews || 0) >= minReviews);
           console.log(`[Filter] minReviews(${minReviews}): ${b2} -> ${finalHotels.length}`);
         }
 
-        const minScore = maxStar >= 5 ? 7.5 : maxStar >= 4 ? 6.5 : 0;
+        const minScore = maxStar >= 5 ? 7.0 : maxStar >= 4 ? 6.0 : 0;
         if (minScore > 0) {
           const b3 = finalHotels.length;
           finalHotels = finalHotels.filter(h => h.avgRating === 0 || h.avgRating >= minScore);
