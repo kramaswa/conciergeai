@@ -291,7 +291,7 @@ Output ONLY a valid JSON object. No markdown, no explanation.`,
         }
       };
 
-      const totalPages = ratings ? 20 : 8;
+      const totalPages = ratings ? 5 : 3;
       const pageNums = Array.from({ length: totalPages }, (_, i) => String(i + 1));
       let pages = await Promise.all(pageNums.map(p => fetchPage(p)));
 
@@ -412,7 +412,7 @@ Output ONLY a valid JSON object. No markdown, no explanation.`,
         });
       }
 
-      const enrichCap = ratings ? 120 : 100;
+      const enrichCap = 20;
       const hotelsToEnrich = hotels.slice(0, enrichCap);
       const hasAmenityFilter = breakfast === 'true' || pool === 'true' || gym === 'true' || wifi === 'true' || freeCancellation === 'true';
       const enrichedHotels: any[] = [];
@@ -647,17 +647,6 @@ Output ONLY a valid JSON object. No markdown, no explanation.`,
 
               const enrichmentPromises = [];
 
-              enrichmentPromises.push(
-                fetch(
-                  `https://booking-com15.p.rapidapi.com/api/v1/hotels/getHotelDetails?hotel_id=${hotelId}&languagecode=en-us`,
-                  { headers: { 'x-rapidapi-key': apiKey, 'x-rapidapi-host': 'booking-com15.p.rapidapi.com' }, signal: controller.signal }
-                ).then(r => r.ok ? r.json() : null).then(data => {
-                  const d = data?.data || data;
-                  if (!d) return;
-                  const url = d?.url || d?.hotel_url || d?.booking_url || d?.website || '';
-                  if (url && url.includes('booking.com')) resolvedBookingUrl = url;
-                }).catch(() => {})
-              );
 
               enrichmentPromises.push(
                 fetch(
@@ -845,9 +834,6 @@ Output ONLY a valid JSON object. No markdown, no explanation.`,
         }));
         enrichedHotels.push(...batchResults);
 
-        if (i + batchSize < hotelsToEnrich.length) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-        }
       }
 
       const hotelsWithoutEnrichment = hotels.slice(enrichCap);
@@ -1051,36 +1037,37 @@ Output ONLY a valid JSON object. No markdown, no explanation.`,
       }
 
       if (hasAmenityFilter && finalHotels.length > 0 && finalHotels.length <= 60) {
-        console.log(`[Amenity] fetching facilities for ${finalHotels.length} hotels sequentially...`);
-        for (let i = 0; i < finalHotels.length; i++) {
-          const hotel = finalHotels[i];
-          try {
-            const ac = new AbortController();
-            const t = setTimeout(() => ac.abort(), 4000);
-            const r = await fetch(
-              `https://booking-com15.p.rapidapi.com/api/v1/hotels/getHotelFacilities?hotel_id=${hotel.hotelId}`,
-              { headers: { 'x-rapidapi-key': apiKey, 'x-rapidapi-host': 'booking-com15.p.rapidapi.com' }, signal: ac.signal }
-            );
-            clearTimeout(t);
-            if (r.ok) {
-              const data = await r.json();
-              const raw: any[] = data?.data || [];
-              if (Array.isArray(raw) && raw.length > 0) {
-                const allNames = raw.flatMap((group: any) => {
-                  const gName = (group.facilitytype_name || group.name || '').toLowerCase();
-                  const items = group.facilities || group.items || [];
-                  const iNames = Array.isArray(items) ? items.map((f: any) => (f.name || '').toLowerCase()) : [];
-                  return [gName, ...iNames];
-                }).join(' ');
-                hotel.pool = allNames.includes('pool') || allNames.includes('swimming');
-                hotel.gym = allNames.includes('gym') || allNames.includes('fitness');
-                hotel.wifi = allNames.includes('wi-fi') || allNames.includes('wifi') || allNames.includes('internet');
-                hotel.breakfast = allNames.includes('breakfast') || allNames.includes('restaurant');
-                console.log(`[Amenity] "${hotel.name}": pool=${hotel.pool} gym=${hotel.gym} wifi=${hotel.wifi} breakfast=${hotel.breakfast}`);
+        console.log(`[Amenity] fetching facilities for ${finalHotels.length} hotels in parallel batches...`);
+        const amenityBatchSize = 10;
+        for (let i = 0; i < finalHotels.length; i += amenityBatchSize) {
+          const amenityBatch = finalHotels.slice(i, i + amenityBatchSize);
+          await Promise.all(amenityBatch.map(async (hotel: any) => {
+            try {
+              const ac = new AbortController();
+              const t = setTimeout(() => ac.abort(), 3000);
+              const r = await fetch(
+                `https://booking-com15.p.rapidapi.com/api/v1/hotels/getHotelFacilities?hotel_id=${hotel.hotelId}`,
+                { headers: { 'x-rapidapi-key': apiKey, 'x-rapidapi-host': 'booking-com15.p.rapidapi.com' }, signal: ac.signal }
+              );
+              clearTimeout(t);
+              if (r.ok) {
+                const data = await r.json();
+                const raw: any[] = data?.data || [];
+                if (Array.isArray(raw) && raw.length > 0) {
+                  const allNames = raw.flatMap((group: any) => {
+                    const gName = (group.facilitytype_name || group.name || '').toLowerCase();
+                    const items = group.facilities || group.items || [];
+                    const iNames = Array.isArray(items) ? items.map((f: any) => (f.name || '').toLowerCase()) : [];
+                    return [gName, ...iNames];
+                  }).join(' ');
+                  hotel.pool = allNames.includes('pool') || allNames.includes('swimming');
+                  hotel.gym = allNames.includes('gym') || allNames.includes('fitness');
+                  hotel.wifi = allNames.includes('wi-fi') || allNames.includes('wifi') || allNames.includes('internet');
+                  hotel.breakfast = allNames.includes('breakfast') || allNames.includes('restaurant');
+                }
               }
-            }
-          } catch {}
-          if (i < finalHotels.length - 1) await new Promise(r => setTimeout(r, 150));
+            } catch {}
+          }));
         }
         const beforeAmenity = finalHotels.length;
         if (breakfast === 'true') finalHotels = finalHotels.filter(h => h.breakfast);
