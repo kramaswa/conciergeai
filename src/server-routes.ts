@@ -1030,7 +1030,8 @@ Output ONLY a valid JSON object. No markdown, no explanation.`,
         const minReviews = maxStar >= 5 ? 5 : maxStar >= 4 ? 3 : 0;
         if (minReviews > 0) {
           const b2 = finalHotels.length;
-          finalHotels = finalHotels.filter(h => (h.reviews || 0) >= minReviews);
+          // reviews=0 means count not available from API — not the same as no reviews, so let those through
+          finalHotels = finalHotels.filter(h => h.reviews === 0 || h.reviews >= minReviews);
           console.log(`[Filter] minReviews(${minReviews}): ${b2} -> ${finalHotels.length}`);
         }
 
