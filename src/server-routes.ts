@@ -291,7 +291,7 @@ Output ONLY a valid JSON object. No markdown, no explanation.`,
         }
       };
 
-      const totalPages = ratings ? 8 : 4;
+      const totalPages = ratings ? 12 : 4;
       const pageNums = Array.from({ length: totalPages }, (_, i) => String(i + 1));
       let pages = await Promise.all(pageNums.map(p => fetchPage(p)));
 
@@ -993,8 +993,8 @@ Output ONLY a valid JSON object. No markdown, no explanation.`,
           ? confirmedPrices[Math.floor(confirmedPrices.length / 2)]
           : 0;
 
-        const absoluteMin = maxRequested >= 5 ? 70 : maxRequested >= 4 ? 35 : 15;
-        const relativeFloor = Math.max(absoluteMin, medianPrice * 0.65);
+        const absoluteMin = maxRequested >= 5 ? 30 : maxRequested >= 4 ? 15 : 5;
+        const relativeFloor = Math.max(absoluteMin, medianPrice * 0.20);
         console.log(`[StarFallback] median confirmed: $${medianPrice.toFixed(0)}, floor: $${relativeFloor.toFixed(0)} (abs min: $${absoluteMin})`);
 
         enrichedHotels.forEach(h => {
@@ -1043,7 +1043,7 @@ Output ONLY a valid JSON object. No markdown, no explanation.`,
         if (allPrices.length > 2) {
           const b4 = finalHotels.length;
           const median = allPrices[Math.floor(allPrices.length / 2)];
-          const priceFloor = median * (maxStar >= 5 ? 0.35 : 0.25);
+          const priceFloor = median * (maxStar >= 5 ? 0.08 : 0.06);
           finalHotels = finalHotels.filter(h => parseFloat(h.price?.total || '0') >= priceFloor);
           console.log(`[Filter] priceFloor($${priceFloor.toFixed(0)}): ${b4} -> ${finalHotels.length}`);
         }
