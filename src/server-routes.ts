@@ -112,12 +112,15 @@ export function setupRoutes(
   app.get("/api/hotel-redirect", (req, res) => {
     const { name, checkIn, checkOut, adults } = req.query as Record<string, string>;
 
-    const params = new URLSearchParams({ q: name || "hotel" });
+    const params = new URLSearchParams({
+      ss: name || "hotel",
+      group_adults: adults || "2",
+      no_rooms: "1"
+    });
     if (checkIn) params.set("checkin", checkIn);
     if (checkOut) params.set("checkout", checkOut);
-    if (adults) params.set("guests", adults);
 
-    return res.redirect(302, `https://www.google.com/travel/hotels?${params.toString()}`);
+    return res.redirect(302, `https://www.booking.com/searchresults.html?${params.toString()}`);
   });
 
   app.post("/api/parse-query", async (req, res) => {
