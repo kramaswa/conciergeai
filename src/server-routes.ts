@@ -210,8 +210,9 @@ Output ONLY a valid JSON object. No markdown, no explanation.`,
         system: `You are NomadAI, a concise travel recommendation assistant.
 
 The data you have for each hotel: name, star rating, overall rating out of 10, review count, price per night, amenities list, and nearby places with walking/transit times.
-From this data you CAN reason about: overall quality (rating + reviews), value for money (price vs. star rating and rating), any listed amenity, and location/centrality (from nearby places — landmarks, metro, city areas within walking distance indicate central locations).
+From this data you CAN reason about: overall quality (rating + reviews), value for money (price vs. star rating and rating), any amenity explicitly listed, and location/centrality (from nearby places — landmarks, metro, city areas within walking distance indicate central locations).
 You cannot verify: views, room sizes, cleanliness scores, noise levels, decor — anything not derivable from the fields above.
+Important: results include all hotels, not just those with confirmed amenities. If the user asked for breakfast/pool/gym/wifi and the recommended hotel doesn't list it, tell them to verify directly with the hotel.
 
 Write 2-3 sentences:
 1. Recommend the single best hotel by name. Cite rating, review count, price, and address any user preference you CAN assess from the data (value, quality, listed amenities).
@@ -399,18 +400,28 @@ Rules: no markdown, no asterisks, plain text only. Never state a fact not deriva
         console.log(`[Filter] maxPrice (${max}): ${before} -> ${finalHotels.length}`);
       }
 
-      // Amenity filters
-      const hasAmenityFilter =
-        breakfast === "true" || pool === "true" || gym === "true" ||
-        wifi === "true" || freeCancellation === "true";
-      if (hasAmenityFilter) {
+      // Free cancellation is a hard filter (booking policy users depend on)
+      if (freeCancellation === "true") {
         const before = finalHotels.length;
-        if (breakfast === "true") finalHotels = finalHotels.filter((h) => h.breakfast);
-        if (pool === "true") finalHotels = finalHotels.filter((h) => h.pool);
-        if (gym === "true") finalHotels = finalHotels.filter((h) => h.gym);
-        if (wifi === "true") finalHotels = finalHotels.filter((h) => h.wifi);
-        if (freeCancellation === "true") finalHotels = finalHotels.filter((h) => h.freeCancellation);
-        console.log(`[Filter] amenities: ${before} -> ${finalHotels.length}`);
+        finalHotels = finalHotels.filter((h) => h.freeCancellation);
+        console.log(`[Filter] freeCancellation: ${before} -> ${finalHotels.length}`);
+      }
+
+      // Breakfast/pool/gym/wifi are soft sorts — SerpApi amenity coverage is sparse,
+      // so filtering hard would hide hotels that have the amenity but don't list it.
+      // Instead, float confirmed matches to the top.
+      const hasAmenityPreference =
+        breakfast === "true" || pool === "true" || gym === "true" || wifi === "true";
+      if (hasAmenityPreference) {
+        finalHotels.sort((a, b) => {
+          const score = (h: any) =>
+            (breakfast === "true" && h.breakfast ? 1 : 0) +
+            (pool === "true" && h.pool ? 1 : 0) +
+            (gym === "true" && h.gym ? 1 : 0) +
+            (wifi === "true" && h.wifi ? 1 : 0);
+          return score(b) - score(a);
+        });
+        console.log(`[Sort] amenity preference applied, confirmed-first`);
       }
 
       // High review count filter
