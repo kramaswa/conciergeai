@@ -160,7 +160,7 @@ export function setupRoutes(
 Current Date: ${today}
 
 EXTRACTION RULES:
-1. city: Full city name. Expand abbreviations (e.g. "NYC" -> "New York City").
+1. city: Full city name. Expand abbreviations (e.g. "NYC" -> "New York City"). neighborhood: specific district or area within the city if mentioned (e.g. "T.Nagar", "Le Marais", "Manhattan"). Leave empty string if not specified.
 2. adults: Number of adults. Default 1.
 3. checkInDate: YYYY-MM-DD, today or later. Default ${defaultCheckIn}.
 4. checkOutDate: YYYY-MM-DD, after checkInDate. Default ${defaultCheckOut}.
@@ -248,7 +248,7 @@ Rules: no markdown, no asterisks, plain text only. Never state a fact not deriva
 
     try {
       const {
-        city, checkIn, checkOut, adults, ratings, breakfast, pool, gym, wifi,
+        city, neighborhood, checkIn, checkOut, adults, ratings, breakfast, pool, gym, wifi,
         freeCancellation, maxPrice, minReviewScore, highReviewCount, sortBy
       } = req.query as any;
 
@@ -287,7 +287,7 @@ Rules: no markdown, no asterisks, plain text only. Never state a fact not deriva
       const buildParams = (pageToken?: string) => {
         const p = new URLSearchParams({
           engine: "google_hotels",
-          q: `hotels in ${city}`,
+          q: neighborhood ? `hotels in ${neighborhood}, ${city}` : `hotels in ${city}`,
           check_in_date: arrival,
           check_out_date: departure,
           adults: String(adultsNum),

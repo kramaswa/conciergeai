@@ -154,6 +154,7 @@ const Hero = () => {
         if (parsed.minReviewScore) params.set('minReviewScore', parsed.minReviewScore.toString());
         if (parsed.highReviewCount) params.set('highReviewCount', 'true');
         if (parsed.sortBy) params.set('sortBy', parsed.sortBy);
+        if (parsed.neighborhood) params.set('neighborhood', parsed.neighborhood);
         navigate(`/search?${params.toString()}`);
       } else {
         toast.error("Couldn't understand the request. Try being more specific!");
@@ -953,7 +954,9 @@ const SearchResults = () => {
         const minReviewScore = searchParams.get('minReviewScore') || '';
         const highReviewCount = searchParams.get('highReviewCount') || '';
 
+        const neighborhood = searchParams.get('neighborhood') || '';
         const queryParams = new URLSearchParams({ city, q: query || '', checkIn, checkOut, adults });
+        if (neighborhood) queryParams.set('neighborhood', neighborhood);
         if (ratings) queryParams.set('ratings', ratings);
         if (breakfast) queryParams.set('breakfast', breakfast);
         if (pool) queryParams.set('pool', pool);
@@ -1016,7 +1019,7 @@ const SearchResults = () => {
             Results for <span className="italic font-serif">"{query}"</span>
           </h2>
           <div className="flex flex-wrap items-center gap-4 text-white/50 uppercase tracking-widest text-xs font-bold">
-            <span>{hotels.length} Properties Found in {city}</span>
+            <span>{hotels.length} Properties Found in {searchParams.get('neighborhood') ? `${searchParams.get('neighborhood')}, ` : ''}{city}</span>
             {searchParams.get('adults') && (
               <span className="bg-white/10 px-2 py-1 rounded text-white/70">
                 {searchParams.get('adults')} Adults
