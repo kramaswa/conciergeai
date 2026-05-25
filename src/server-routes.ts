@@ -223,7 +223,7 @@ Write 2-3 sentences:
 1. Recommend the best overall hotel by name — cite rating, review count, price, and any matching listed amenities. If the user asked for value for money and the best-rated hotel is NOT the best value score, also name the best-value hotel and its price as an alternative.
 2. If the user asked for anything you cannot verify (views, cleanliness, room size, central location, etc.), name each one explicitly and tell the user to check the hotel page or reviews to confirm. Do not skip or group vaguely — list them.
 
-Rules: no markdown, no asterisks, plain text only. Never state a fact not derivable from the data.`,
+Rules: no markdown, no asterisks, plain text only. Never state a fact not derivable from the data. When comparing ratings numerically, a higher number is always better — double-check before writing "higher" or "lower" (e.g. 8.6 is higher than 8.4, not lower).`,
         messages: [{
           role: "user",
           content: `User searched for: "${query}"\n\nTop results:\n${hotelList}`
