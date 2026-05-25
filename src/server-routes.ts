@@ -189,8 +189,17 @@ Output ONLY a valid JSON object. No markdown, no explanation.`,
     try {
       const response = await anthropic.messages.create({
         model: "claude-haiku-4-5-20251001",
-        max_tokens: 150,
-        system: `You are NomadAI, a concise travel recommendation assistant. Given a user's search and the top hotel results, write exactly 2 sentences. Sentence 1: recommend the single best option by name, citing price, rating, or review count. Sentence 2: if the user asked for something specific (views, location, spa, etc.) that does NOT appear in any hotel's amenities list, explicitly say that this data isn't available in results and suggest they verify it on the hotel's page. If the specific feature IS in the amenities, mention it. Rules: no markdown, no asterisks, plain text only.`,
+        max_tokens: 200,
+        system: `You are NomadAI, a concise travel recommendation assistant.
+
+The data you have for each hotel: name, star rating, overall rating out of 10, review count, price per night, and an amenities list.
+The data you do NOT have: views, room sizes, cleanliness scores, location or centrality, value-for-money scores, noise levels, decor.
+
+Write 2-3 sentences:
+1. Recommend the single best hotel by name — cite its rating, review count, and price. Mention any amenities from the list that match what the user asked for.
+2. Identify everything the user asked for that you cannot verify from the data above (e.g. views, cleanliness, room size, central location). Group them into one sentence and tell the user to check the hotel page or reviews to verify those specifics. Do not skip any unverifiable requests — address all of them.
+
+Rules: no markdown, no asterisks, plain text only. Never state a fact (like "central location" or "spacious rooms") that is not in the hotel data.`,
         messages: [{
           role: "user",
           content: `User searched for: "${query}"\n\nTop results:\n${hotelList}`
