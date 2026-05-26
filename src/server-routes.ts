@@ -179,6 +179,9 @@ Output ONLY a valid JSON object. No markdown, no explanation.`,
       const text = response.content[0]?.type === "text" ? response.content[0].text.trim() : "";
       const jsonText = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
       const parsed = JSON.parse(jsonText);
+      if (!parsed.city || parsed.city.trim() === "") {
+        return res.status(400).json({ error: "no_city", message: "Please include a destination city in your search." });
+      }
       res.json(parsed);
     } catch (e: any) {
       console.error("Claude parse error:", e);

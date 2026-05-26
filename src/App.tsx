@@ -159,8 +159,8 @@ const Hero = () => {
       } else {
         toast.error("Couldn't understand the request. Try being more specific!");
       }
-    } catch (err) {
-      toast.error("Search failed. Please try again.");
+    } catch (err: any) {
+      toast.error(err?.message || "Search failed. Please try again.");
     } finally {
       setIsSearching(false);
     }

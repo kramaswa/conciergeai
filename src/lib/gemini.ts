@@ -17,11 +17,11 @@ export async function parseTravelQuery(query: string) {
     const result = await response.json();
     if (!response.ok) {
       console.error("Parse query server error:", result);
-      return null;
+      throw new Error(result.message || "Failed to parse query");
     }
     if (result?.error) {
       console.error("Parse query returned error:", result.error);
-      return null;
+      throw new Error(result.message || "Failed to parse query");
     }
 
     if (result) queryCache.set(normalizedQuery, result);
