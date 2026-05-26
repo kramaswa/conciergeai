@@ -170,7 +170,7 @@ const Hero = () => {
     <div className="relative h-[80vh] flex flex-col items-center justify-center px-6 overflow-hidden">
       <div className="absolute inset-0 z-0">
         <img 
-          src="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&q=80&w=2000" 
+          src="https://images.unsplash.com/photo-1768913737629-2ed60e0aad1b?fm=jpg&q=80&w=2000&auto=format&fit=crop"
           className="w-full h-full object-cover opacity-40 grayscale"
           alt="Travel"
           referrerPolicy="no-referrer"
