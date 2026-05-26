@@ -184,7 +184,7 @@ const Hero = () => {
         className="relative z-10 text-center max-w-4xl w-full"
       >
         <h1 className="text-6xl md:text-8xl font-light tracking-tighter text-white mb-8 leading-none">
-          Where to <span className="italic font-serif">next?</span>
+          Your perfect stay, <span className="italic font-serif">found.</span>
         </h1>
         
         <form onSubmit={handleSearch} className="relative group">
