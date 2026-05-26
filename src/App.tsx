@@ -96,7 +96,7 @@ const Navbar = () => {
     <nav className="fixed top-0 left-0 right-0 z-50 bg-black/50 backdrop-blur-md border-b border-white/10 px-6 py-4 flex justify-between items-center">
       <Link to="/" className="text-2xl font-light tracking-tighter text-white flex items-center gap-2">
         <Sparkles className="w-6 h-6 text-orange-500" />
-        NOMAD<span className="font-bold">AI</span>
+        CONCIERGE<span className="font-bold">AI</span>
       </Link>
       
       <div className="flex items-center gap-6">
@@ -910,12 +910,12 @@ const SearchResults = () => {
   const [refinement, setRefinement] = useState('');
   const [refining, setRefining] = useState(false);
   const [sortKeys, setSortKeysState] = useState<SortOption[]>(() => {
-    try { return JSON.parse(sessionStorage.getItem('nomadai-sort-keys') || '[]'); }
+    try { return JSON.parse(sessionStorage.getItem('conciergeai-sort-keys') || '[]'); }
     catch { return []; }
   });
   const setSortKeys = (keys: SortOption[]) => {
     setSortKeysState(keys);
-    sessionStorage.setItem('nomadai-sort-keys', JSON.stringify(keys));
+    sessionStorage.setItem('conciergeai-sort-keys', JSON.stringify(keys));
   };
 
   // Filters are derived from URL params and trigger a new API search (server-side filtering is more accurate)
@@ -1156,7 +1156,7 @@ const SearchResults = () => {
             <Sparkles className="w-5 h-5 text-orange-400" />
           </div>
           <div>
-            <p className="text-orange-400 text-xs font-bold uppercase tracking-widest mb-1">NomadAI Recommends</p>
+            <p className="text-orange-400 text-xs font-bold uppercase tracking-widest mb-1">ConciergeAI Recommends</p>
             {loadingRec && !recommendation
               ? <p className="text-white/50 text-sm animate-pulse">Analyzing results…</p>
               : <p className="text-white/90 text-sm md:text-base leading-relaxed">{recommendation}</p>
@@ -1520,7 +1520,7 @@ export default function App() {
           <footer className="border-t border-white/10 py-12 px-6 mt-20">
             <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
               <div className="text-xl font-light tracking-tighter text-white/50">
-                NOMAD<span className="font-bold">AI</span>
+                CONCIERGE<span className="font-bold">AI</span>
               </div>
               <div className="flex gap-8 text-sm text-white/30 font-medium uppercase tracking-widest">
                 <a href="#" className="hover:text-white transition-colors">Privacy</a>
@@ -1529,7 +1529,7 @@ export default function App() {
                 <Link to="/evals" className="hover:text-white transition-colors">Evals</Link>
               </div>
               <div className="text-white/20 text-xs">
-                © 2026 NomadAI Travel. All rights reserved.
+                © 2026 ConciergeAI. All rights reserved.
               </div>
             </div>
           </footer>
