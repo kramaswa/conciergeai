@@ -170,14 +170,12 @@ const Hero = () => {
     <div className="relative h-[80vh] flex flex-col items-center justify-center px-6 overflow-hidden">
       <div className="absolute inset-0 z-0">
         <img 
-          src="https://images.unsplash.com/photo-1768913737629-2ed60e0aad1b?fm=jpg&q=80&w=2000&auto=format&fit=crop"
+          src="https://images.unsplash.com/photo-1762759448938-154b640cefbf?fm=jpg&q=80&w=2000&auto=format&fit=crop"
           className="w-full h-full object-cover opacity-60"
-          style={{ objectPosition: '60% 30%' }}
           alt="Travel"
           referrerPolicy="no-referrer"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black via-transparent to-black" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black via-transparent to-transparent" />
       </div>
 
       <motion.div 
