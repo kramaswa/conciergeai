@@ -139,6 +139,40 @@ export function setupRoutes(
     return res.redirect(302, `https://www.booking.com/searchresults.html?${params.toString()}`);
   });
 
+  app.post("/api/check-ambiguity", async (req, res) => {
+    const { query } = req.body as { query: string };
+    if (!query) return res.status(400).json({ error: "query is required" });
+
+    try {
+      const response = await anthropic.messages.create({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 256,
+        system: `You are a hotel search assistant evaluating if a query needs clarification before searching.
+
+A query is CLEAR enough to search if it has a specific city or destination plus any preference signals (romantic, luxury, budget, family, etc.).
+
+A query NEEDS CLARIFICATION only if:
+- The destination is vague with no specific city or country (e.g. "somewhere warm", "a beach in Europe")
+- The user explicitly expresses uncertainty about key details ("not sure when", "any suggestions on where")
+- The intent is completely generic with no signals at all (e.g. "I need a hotel")
+
+Do NOT ask for clarification about: dates (we have defaults), budget, or amenities — these are optional.
+If clarification is needed, ask ONE short friendly question targeting the most critical missing info.
+
+Output ONLY valid JSON: { "needsClarification": boolean, "question": string | null }`,
+        messages: [{ role: "user", content: `Query: "${query}"` }]
+      });
+
+      const text = response.content[0]?.type === "text" ? response.content[0].text.trim() : "";
+      const jsonText = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+      const result = JSON.parse(jsonText);
+      res.json(result);
+    } catch (e: any) {
+      console.error("Ambiguity check error:", e);
+      res.json({ needsClarification: false, question: null });
+    }
+  });
+
   app.post("/api/parse-query", async (req, res) => {
     const { query } = req.body as { query: string };
     if (!query) return res.status(400).json({ error: "query is required" });

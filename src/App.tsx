@@ -125,26 +125,25 @@ const Hero = () => {
   const location = useLocation();
   const [query, setQuery] = useState((location.state as any)?.prefill || '');
   const [isSearching, setIsSearching] = useState(false);
+  const [clarifying, setClarifying] = useState(false);
+  const [clarificationQuestion, setClarificationQuestion] = useState('');
+  const [clarificationAnswer, setClarificationAnswer] = useState('');
+  const [pendingQuery, setPendingQuery] = useState('');
   const navigate = useNavigate();
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!query.trim()) return;
-
+  const runSearch = async (fullQuery: string) => {
     setIsSearching(true);
     try {
-      const parsed = await parseTravelQuery(query);
+      const parsed = await parseTravelQuery(fullQuery);
       if (parsed) {
         const params = new URLSearchParams({
           city: parsed.city,
           adults: parsed.adults.toString(),
           checkIn: parsed.checkInDate,
           checkOut: parsed.checkOutDate,
-          q: query
+          q: fullQuery
         });
-        if (parsed.ratings && parsed.ratings.length > 0) {
-          params.set('ratings', parsed.ratings.join(','));
-        }
+        if (parsed.ratings && parsed.ratings.length > 0) params.set('ratings', parsed.ratings.join(','));
         if (parsed.breakfast) params.set('breakfast', 'true');
         if (parsed.pool) params.set('pool', 'true');
         if (parsed.gym) params.set('gym', 'true');
@@ -166,10 +165,47 @@ const Hero = () => {
     }
   };
 
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!query.trim()) return;
+
+    setIsSearching(true);
+    try {
+      const res = await fetch('/api/check-ambiguity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query })
+      });
+      const { needsClarification, question } = await res.json();
+
+      if (needsClarification && question) {
+        setPendingQuery(query);
+        setClarificationQuestion(question);
+        setClarificationAnswer('');
+        setClarifying(true);
+        setIsSearching(false);
+        return;
+      }
+    } catch {
+      // if ambiguity check fails, proceed with search anyway
+    }
+
+    setIsSearching(false);
+    await runSearch(query);
+  };
+
+  const handleClarificationSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!clarificationAnswer.trim()) return;
+    setClarifying(false);
+    const fullQuery = `${pendingQuery}. ${clarificationAnswer}`;
+    await runSearch(fullQuery);
+  };
+
   return (
     <div className="relative h-[80vh] flex flex-col items-center justify-center px-6 overflow-hidden">
       <div className="absolute inset-0 z-0">
-        <img 
+        <img
           src="https://images.unsplash.com/photo-1762759448938-154b640cefbf?fm=jpg&q=80&w=2000&auto=format&fit=crop"
           className="w-full h-full object-cover"
           alt="Travel"
@@ -178,7 +214,7 @@ const Hero = () => {
         <div className="absolute inset-0 bg-gradient-to-b from-black via-transparent to-black" />
       </div>
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="relative z-10 text-center max-w-4xl w-full"
@@ -186,31 +222,67 @@ const Hero = () => {
         <h1 className="text-6xl md:text-8xl font-light tracking-tighter text-white mb-8 leading-none">
           Your perfect stay, <span className="italic font-serif">found.</span>
         </h1>
-        
-        <form onSubmit={handleSearch} className="relative group">
-          <textarea
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Describe your perfect stay in plain English..."
-            className="w-full bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 pt-10 text-xl text-white placeholder:text-white/30 focus:outline-none focus:border-white/40 transition-all resize-none h-48"
-          />
-          <button 
-            type="submit"
-            disabled={isSearching}
-            className="absolute bottom-6 right-6 bg-white text-black px-8 py-3 rounded-full font-bold flex items-center gap-2 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+
+        {!clarifying ? (
+          <form onSubmit={handleSearch} className="relative group">
+            <textarea
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Describe your perfect stay in plain English..."
+              className="w-full bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-8 pt-10 text-xl text-white placeholder:text-white/30 focus:outline-none focus:border-white/40 transition-all resize-none h-48"
+            />
+            <button
+              type="submit"
+              disabled={isSearching}
+              className="absolute bottom-6 right-6 bg-white text-black px-8 py-3 rounded-full font-bold flex items-center gap-2 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+            >
+              {isSearching ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
+              {isSearching ? 'Analyzing...' : 'Search'}
+            </button>
+            <div className="absolute top-4 left-8 flex items-center gap-2 text-white/40 text-xs uppercase tracking-widest font-bold">
+              <Sparkles className="w-3 h-3" />
+              AI Powered Search
+            </div>
+          </form>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white/10 backdrop-blur-xl border border-orange-500/40 rounded-3xl p-8"
           >
-            {isSearching ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
-            {isSearching ? 'Analyzing...' : 'Search'}
-          </button>
-          <div className="absolute top-4 left-8 flex items-center gap-2 text-white/40 text-xs uppercase tracking-widest font-bold">
-            <Sparkles className="w-3 h-3" />
-            AI Powered Search
-          </div>
-        </form>
-        
-        <p className="mt-6 text-white/50 text-sm italic">
-          "I want a 5-star hotel in Paris near the Eiffel Tower with a balcony and free breakfast for 2 people."
-        </p>
+            <div className="flex items-center gap-2 text-orange-400 text-xs uppercase tracking-widest font-bold mb-4">
+              <Sparkles className="w-3 h-3" />
+              ConciergeAI
+            </div>
+            <p className="text-white text-xl mb-6 text-left">{clarificationQuestion}</p>
+            <form onSubmit={handleClarificationSubmit} className="flex gap-3">
+              <input
+                autoFocus
+                value={clarificationAnswer}
+                onChange={(e) => setClarificationAnswer(e.target.value)}
+                placeholder="Type your answer..."
+                className="flex-1 bg-white/10 border border-white/20 rounded-full px-6 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-white/40 transition-all"
+              />
+              <button
+                type="submit"
+                disabled={isSearching || !clarificationAnswer.trim()}
+                className="bg-orange-500 text-white px-6 py-3 rounded-full font-bold flex items-center gap-2 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+              >
+                {isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                Search
+              </button>
+            </form>
+            <button onClick={() => setClarifying(false)} className="mt-4 text-white/40 text-sm hover:text-white/60 transition-colors">
+              ← Edit my original query
+            </button>
+          </motion.div>
+        )}
+
+        {!clarifying && (
+          <p className="mt-6 text-white/50 text-sm italic">
+            "I want a 5-star hotel in Paris near the Eiffel Tower with a balcony and free breakfast for 2 people."
+          </p>
+        )}
       </motion.div>
     </div>
   );
