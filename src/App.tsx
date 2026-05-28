@@ -594,10 +594,10 @@ const HotelDetailPage = () => {
       {/* Back button */}
       <div className="fixed top-20 left-6 z-40">
         <button
-          onClick={() => navigate(`/search${fromSearch}`)}
+          onClick={() => fromSearch === 'profile' ? navigate('/profile') : navigate(`/search${fromSearch}`)}
           className="flex items-center gap-2 bg-black/60 backdrop-blur-md px-4 py-2 rounded-full text-sm font-medium text-white/80 hover:text-white border border-white/10 hover:border-white/30 transition-all"
         >
-          <ChevronLeft className="w-4 h-4" /> Back to results
+          <ChevronLeft className="w-4 h-4" /> {fromSearch === 'profile' ? 'Back to saved hotels' : 'Back to results'}
         </button>
       </div>
 
@@ -1418,7 +1418,7 @@ const Profile = () => {
             <div className="space-y-4">
               {savedHotels.map((hotel: any) => (
                 <div key={hotel.hotelId} className="flex items-center gap-4 bg-white/5 rounded-2xl p-4">
-                  <Link to={`/hotel/${hotel.hotelId}`} state={{ hotel }} className="flex items-center gap-4 flex-1 min-w-0 hover:opacity-80 transition-opacity">
+                  <Link to={`/hotel/${hotel.hotelId}`} state={{ hotel, from: 'profile' }} className="flex items-center gap-4 flex-1 min-w-0 hover:opacity-80 transition-opacity">
                     <img src={hotel.image} alt={hotel.name} className="w-20 h-16 object-cover rounded-xl flex-shrink-0" referrerPolicy="no-referrer" />
                     <div className="flex-1 min-w-0">
                       <p className="text-white font-semibold truncate">{hotel.name}</p>
