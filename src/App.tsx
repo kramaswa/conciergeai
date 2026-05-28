@@ -1493,51 +1493,124 @@ const Profile = () => {
 };
 
 // --- Evals Page ---
-import { searchTestCases, TestCase } from './lib/evals';
+import { searchTestCases, ambiguityTestCases, TestCase, AmbiguityTestCase } from './lib/evals';
+
+const ResultCard = ({ res }: { res: any }) => (
+  <div className={`p-6 rounded-2xl border ${res.status ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
+    <div className="flex justify-between items-start mb-4">
+      <div>
+        <h4 className="font-bold text-white">{res.test.name}</h4>
+        <p className="text-sm text-white/50 italic">"{res.test.query}"</p>
+        {res.failedKeys && res.failedKeys.length > 0 && (
+          <p className="text-xs text-red-400 mt-1 font-bold uppercase tracking-widest">
+            Failed: {res.failedKeys.join(', ')}
+          </p>
+        )}
+      </div>
+      <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${res.status ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
+        {res.status ? 'Passed' : 'Failed'}
+      </span>
+    </div>
+    <div className="grid grid-cols-2 gap-4 text-xs">
+      <div className="bg-black/20 p-4 rounded-xl">
+        <p className="text-white/30 mb-2 uppercase font-bold">Expected</p>
+        <pre className="text-white font-mono">{JSON.stringify(res.test.expected, null, 2)}</pre>
+      </div>
+      <div className="bg-black/20 p-4 rounded-xl">
+        <p className="text-white/30 mb-2 uppercase font-bold">Actual (AI)</p>
+        <pre className="text-white font-mono">{JSON.stringify(res.parsed, null, 2)}</pre>
+      </div>
+    </div>
+  </div>
+);
+
+const SectionHeader = ({ title, passed, total }: { title: string; passed: number; total: number }) => (
+  <div className="flex items-center justify-between mb-4 mt-10">
+    <h3 className="text-lg font-bold text-white/80 uppercase tracking-widest">{title}</h3>
+    {total > 0 && (
+      <span className={`text-sm font-bold ${passed === total ? 'text-green-400' : 'text-red-400'}`}>
+        {passed}/{total} passed
+      </span>
+    )}
+  </div>
+);
 
 const EvalsPage = () => {
-  const [results, setResults] = useState<any[]>([]);
+  const [parseResults, setParseResults] = useState<any[]>([]);
+  const [ambiguityResults, setAmbiguityResults] = useState<any[]>([]);
   const [isRunning, setIsRunning] = useState(false);
 
   const runEvals = async () => {
     setIsRunning(true);
-    setResults([]);
-    
-    const evalPromises = searchTestCases.map(async (test) => {
+    setParseResults([]);
+    setAmbiguityResults([]);
+
+    const runParseTests = searchTestCases.map(async (test) => {
       try {
         const parsed = await parseTravelQuery(test.query);
         const failedKeys: string[] = [];
         const status = Object.keys(test.expected).every(key => {
           const expectedVal = (test.expected as any)[key];
           const actualVal = (parsed as any)[key];
-          
-          let match = false;
-          if (Array.isArray(expectedVal)) {
-            match = JSON.stringify(expectedVal) === JSON.stringify(actualVal);
-          } else {
-            match = expectedVal === actualVal;
-          }
-
+          const match = Array.isArray(expectedVal)
+            ? JSON.stringify(expectedVal) === JSON.stringify(actualVal)
+            : expectedVal === actualVal;
           if (!match) failedKeys.push(key);
           return match;
         });
-
         return { test, parsed, status, failedKeys };
-      } catch (err) {
+      } catch {
         return { test, parsed: null, status: false, error: true, failedKeys: [] };
       }
     });
 
-    const allResults = await Promise.all(evalPromises);
-    setResults(allResults);
+    const runAmbiguityTests = ambiguityTestCases.map(async (test) => {
+      try {
+        const res = await fetch('/api/check-ambiguity', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: test.query }),
+        });
+        const parsed = await res.json();
+        const failedKeys: string[] = [];
+        const status = Object.keys(test.expected).every(key => {
+          const match = (test.expected as any)[key] === (parsed as any)[key];
+          if (!match) failedKeys.push(key);
+          return match;
+        });
+        return { test, parsed, status, failedKeys };
+      } catch {
+        return { test, parsed: null, status: false, error: true, failedKeys: [] };
+      }
+    });
+
+    const [pResults, aResults] = await Promise.all([
+      Promise.all(runParseTests),
+      Promise.all(runAmbiguityTests),
+    ]);
+
+    setParseResults(pResults);
+    setAmbiguityResults(aResults);
     setIsRunning(false);
   };
 
+  const allResults = [...parseResults, ...ambiguityResults];
+  const totalPassed = allResults.filter(r => r.status).length;
+  const totalTests = searchTestCases.length + ambiguityTestCases.length;
+  const hasResults = allResults.length > 0;
+
   return (
     <div className="pt-32 pb-20 px-6 max-w-5xl mx-auto">
-      <div className="flex justify-between items-center mb-12">
-        <h2 className="text-5xl font-light text-white tracking-tighter">AI <span className="italic font-serif">Evals</span></h2>
-        <button 
+      <div className="flex justify-between items-center mb-4">
+        <div>
+          <h2 className="text-5xl font-light text-white tracking-tighter">AI <span className="italic font-serif">Evals</span></h2>
+          {hasResults && (
+            <p className={`mt-2 text-sm font-bold ${totalPassed === totalTests ? 'text-green-400' : 'text-red-400'}`}>
+              {totalPassed}/{totalTests} tests passed
+            </p>
+          )}
+        </div>
+        <button
           onClick={runEvals}
           disabled={isRunning}
           className="bg-orange-500 text-white px-8 py-3 rounded-full font-bold hover:bg-orange-600 transition-all disabled:opacity-50 flex items-center gap-2"
@@ -1547,42 +1620,33 @@ const EvalsPage = () => {
         </button>
       </div>
 
-      <div className="space-y-4">
-        {results.map((res, i) => (
-          <div key={i} className={`p-6 rounded-2xl border ${res.status ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h4 className="font-bold text-white">{res.test.name}</h4>
-                <p className="text-sm text-white/50 italic">"{res.test.query}"</p>
-                {res.failedKeys && res.failedKeys.length > 0 && (
-                  <p className="text-xs text-red-400 mt-1 font-bold uppercase tracking-widest">
-                    Failed Keys: {res.failedKeys.join(', ')}
-                  </p>
-                )}
-              </div>
-              <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${res.status ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
-                {res.status ? 'Passed' : 'Failed'}
-              </span>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4 text-xs">
-              <div className="bg-black/20 p-4 rounded-xl">
-                <p className="text-white/30 mb-2 uppercase font-bold">Expected</p>
-                <pre className="text-white font-mono">{JSON.stringify(res.test.expected, null, 2)}</pre>
-              </div>
-              <div className="bg-black/20 p-4 rounded-xl">
-                <p className="text-white/30 mb-2 uppercase font-bold">Actual (AI Parsed)</p>
-                <pre className="text-white font-mono">{JSON.stringify(res.parsed, null, 2)}</pre>
-              </div>
-            </div>
+      {!isRunning && !hasResults && (
+        <div className="text-center py-20 border border-dashed border-white/10 rounded-3xl text-white/30 mt-8">
+          Click "Run All Tests" to begin evaluation.
+        </div>
+      )}
+
+      {(hasResults || isRunning) && (
+        <>
+          <SectionHeader
+            title="Query Parser"
+            passed={parseResults.filter(r => r.status).length}
+            total={parseResults.length}
+          />
+          <div className="space-y-4">
+            {parseResults.map((res, i) => <ResultCard key={i} res={res} />)}
           </div>
-        ))}
-        {!isRunning && results.length === 0 && (
-          <div className="text-center py-20 border border-dashed border-white/10 rounded-3xl text-white/30">
-            Click "Run All Tests" to begin evaluation.
+
+          <SectionHeader
+            title="Ambiguity Detection"
+            passed={ambiguityResults.filter(r => r.status).length}
+            total={ambiguityResults.length}
+          />
+          <div className="space-y-4">
+            {ambiguityResults.map((res, i) => <ResultCard key={i} res={res} />)}
           </div>
-        )}
-      </div>
+        </>
+      )}
     </div>
   );
 };

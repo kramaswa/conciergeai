@@ -7,9 +7,17 @@ export interface TestCase {
     breakfast?: boolean;
     pool?: boolean;
     gym?: boolean;
+    wifi?: boolean;
+    freeCancellation?: boolean;
     maxPrice?: number;
     minReviewScore?: number;
   };
+}
+
+export interface AmbiguityTestCase {
+  name: string;
+  query: string;
+  expected: { needsClarification: boolean };
 }
 
 export const searchTestCases: TestCase[] = [
@@ -47,5 +55,53 @@ export const searchTestCases: TestCase[] = [
     name: "Complex Query",
     query: "3 star or better hotels in Seoul with a pool below $150",
     expected: { city: "Seoul", ratings: [3, 4, 5], pool: true, maxPrice: 150 }
+  },
+  {
+    name: "Beach City Inference",
+    query: "beachfront hotels in Thailand",
+    expected: { city: "Phuket" }
+  },
+  {
+    name: "Free Cancellation",
+    query: "hotels with free cancellation in Dubai",
+    expected: { city: "Dubai", freeCancellation: true }
+  },
+  {
+    name: "Free WiFi Filter",
+    query: "hotels with free wifi in Amsterdam under $200",
+    expected: { city: "Amsterdam", wifi: true, maxPrice: 200 }
+  },
+  {
+    name: "5-Star Luxury",
+    query: "5 star hotels in Singapore with a pool",
+    expected: { city: "Singapore", ratings: [5], pool: true }
+  }
+];
+
+export const ambiguityTestCases: AmbiguityTestCase[] = [
+  {
+    name: "No City or Context",
+    query: "I want something relaxing",
+    expected: { needsClarification: true }
+  },
+  {
+    name: "Vague Mood, No Location",
+    query: "a nice place to stay",
+    expected: { needsClarification: true }
+  },
+  {
+    name: "Beach With No Country or City",
+    query: "beach vacation",
+    expected: { needsClarification: true }
+  },
+  {
+    name: "Clear Query — No Clarification Needed",
+    query: "4 star hotels in Tokyo with a pool",
+    expected: { needsClarification: false }
+  },
+  {
+    name: "City + Amenity — No Clarification Needed",
+    query: "budget hotels in Berlin with free breakfast",
+    expected: { needsClarification: false }
   }
 ];
