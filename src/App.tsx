@@ -1514,11 +1514,11 @@ const ResultCard = ({ res }: { res: any }) => (
     <div className="grid grid-cols-2 gap-4 text-xs">
       <div className="bg-black/20 p-4 rounded-xl">
         <p className="text-white/30 mb-2 uppercase font-bold">Expected</p>
-        <pre className="text-white font-mono">{JSON.stringify(res.test.expected, null, 2)}</pre>
+        <pre className="text-white font-mono whitespace-pre-wrap break-all">{JSON.stringify(res.test.expected, null, 2)}</pre>
       </div>
       <div className="bg-black/20 p-4 rounded-xl">
         <p className="text-white/30 mb-2 uppercase font-bold">Actual (AI)</p>
-        <pre className="text-white font-mono">{JSON.stringify(res.parsed, null, 2)}</pre>
+        <pre className="text-white font-mono whitespace-pre-wrap break-all">{JSON.stringify(res.parsed, null, 2)}</pre>
       </div>
     </div>
   </div>
