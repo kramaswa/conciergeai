@@ -458,7 +458,7 @@ Rules: no markdown, no asterisks, plain text only. Never state a fact not deriva
         const allowedRatings = (ratings as string).split(",").map(Number);
         const before = finalHotels.length;
         finalHotels = finalHotels.filter(
-          (h) => h.starRating === 0 || allowedRatings.includes(h.starRating)
+          (h) => allowedRatings.includes(h.starRating)
         );
         console.log(`[Filter] starRating [${allowedRatings}]: ${before} -> ${finalHotels.length}`);
       }
