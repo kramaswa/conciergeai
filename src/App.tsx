@@ -563,9 +563,8 @@ const HotelDetailPage = () => {
         toast.success(`${hotel.name} removed from wishlist.`);
       } else {
         const { doc, setDoc, serverTimestamp } = await import('firebase/firestore');
-        const cleanHotel = Object.fromEntries(
-          Object.entries(hotel).filter(([, v]) => v !== undefined)
-        );
+        // JSON round-trip strips undefined at all nesting levels
+        const cleanHotel = JSON.parse(JSON.stringify(hotel));
         await setDoc(doc(db, 'users', user.uid, 'savedHotels', hotel.hotelId), {
           userId: user.uid,
           hotelId: hotel.hotelId,
@@ -578,7 +577,8 @@ const HotelDetailPage = () => {
       }
     } catch (err) {
       console.error('Save/remove error:', err);
-      toast.error(isSaved ? "Failed to remove hotel." : "Failed to save hotel.");
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error(`Save failed: ${msg}`);
     }
     finally { setIsSaving(false); }
   };
