@@ -52,12 +52,14 @@ const AuthContext = createContext<{
   loading: boolean;
   signIn: () => Promise<void>;
   logout: () => Promise<void>;
+  updateProfile: (updates: Partial<UserProfile>) => void;
 }>({
   user: null,
   profile: null,
   loading: true,
   signIn: async () => {},
   logout: async () => {},
+  updateProfile: () => {},
 });
 
 const useAuth = () => useContext(AuthContext);
@@ -1339,7 +1341,7 @@ const SearchResults = () => {
 };
 
 const Profile = () => {
-  const { profile, user } = useAuth();
+  const { profile, user, updateProfile } = useAuth();
   const [prefs, setPrefs] = useState(profile?.preferences || '');
   const [saving, setSaving] = useState(false);
 
@@ -1350,7 +1352,8 @@ const Profile = () => {
       await updateDoc(doc(db, 'users', user.uid), {
         preferences: prefs
       });
-      toast.success("Preferences updated!");
+      updateProfile({ preferences: prefs });
+      toast.success("Preferences saved!");
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, `users/${user.uid}`);
       toast.error("Failed to save preferences.");
@@ -1559,8 +1562,12 @@ export default function App() {
     toast.success("Logged out.");
   };
 
+  const updateProfile = (updates: Partial<UserProfile>) => {
+    setProfile(prev => prev ? { ...prev, ...updates } : prev);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signIn, logout }}>
+    <AuthContext.Provider value={{ user, profile, loading, signIn, logout, updateProfile }}>
       <Router>
         <div className="min-h-screen bg-black text-white font-sans selection:bg-orange-500 selection:text-white">
           <Toaster position="top-center" theme="dark" />
