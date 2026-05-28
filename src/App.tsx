@@ -1343,8 +1343,13 @@ const SearchResults = () => {
 
 const Profile = () => {
   const { profile, user, updateProfile } = useAuth();
+  const navigate = useNavigate();
   const [prefs, setPrefs] = useState(profile?.preferences || '');
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!user) navigate('/');
+  }, [user, navigate]);
 
   const handleSave = async () => {
     console.log("handleSave called, user:", user?.uid, "prefs:", prefs);
