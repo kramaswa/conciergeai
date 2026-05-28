@@ -174,7 +174,7 @@ Output ONLY valid JSON: { "needsClarification": boolean, "question": string | nu
   });
 
   app.post("/api/parse-query", async (req, res) => {
-    const { query } = req.body as { query: string };
+    const { query, userPreferences } = req.body as { query: string; userPreferences?: string };
     if (!query) return res.status(400).json({ error: "query is required" });
 
     const todayDate = new Date();
@@ -205,6 +205,7 @@ EXTRACTION RULES:
 9. maxPrice: number if mentioned.
 10. sortBy: "popularity"|"review_score"|"price_ascending"|"distance_from_search"|"value_for_money". "top rated"->"review_score", "cheapest"->"price_ascending", "central"->"distance_from_search", "value for money"->"value_for_money". Default "popularity".
 11. preferences: any other specific needs as a string.
+${userPreferences ? `\nUSER DEFAULT PREFERENCES: "${userPreferences}"\nApply these as defaults, but explicit terms in the query always take priority. E.g. if preferences say "4+ star" but query says "budget hotel", do not set star ratings.` : ""}
 
 Output ONLY a valid JSON object. No markdown, no explanation.`,
         messages: [{ role: "user", content: `Request: "${query}"` }],

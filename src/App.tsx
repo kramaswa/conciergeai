@@ -125,6 +125,7 @@ const Navbar = () => {
 
 const Hero = () => {
   const location = useLocation();
+  const { profile } = useAuth();
   const [query, setQuery] = useState((location.state as any)?.prefill || '');
   const [isSearching, setIsSearching] = useState(false);
   const [clarifying, setClarifying] = useState(false);
@@ -136,7 +137,7 @@ const Hero = () => {
   const runSearch = async (fullQuery: string) => {
     setIsSearching(true);
     try {
-      const parsed = await parseTravelQuery(fullQuery);
+      const parsed = await parseTravelQuery(fullQuery, profile?.preferences);
       if (parsed) {
         const params = new URLSearchParams({
           city: parsed.city,
