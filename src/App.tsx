@@ -1548,8 +1548,9 @@ export default function App() {
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
-    } catch (err) {
-      toast.error("Sign in failed.");
+    } catch (err: any) {
+      console.error("Sign in error:", err?.code, err?.message);
+      toast.error(`Sign in failed: ${err?.code || err?.message || "unknown error"}`);
     }
   };
 
