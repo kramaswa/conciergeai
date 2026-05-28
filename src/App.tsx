@@ -1346,13 +1346,26 @@ const Profile = () => {
   const navigate = useNavigate();
   const [prefs, setPrefs] = useState(profile?.preferences || '');
   const [saving, setSaving] = useState(false);
+  const [savedHotels, setSavedHotels] = useState<any[]>([]);
+  const [loadingHotels, setLoadingHotels] = useState(true);
 
   useEffect(() => {
-    if (!user) navigate('/');
+    if (!user) { navigate('/'); return; }
+    const loadSaved = async () => {
+      try {
+        const { collection, getDocs, orderBy, query: fsQuery } = await import('firebase/firestore');
+        const snap = await getDocs(fsQuery(collection(db, 'users', user.uid, 'savedHotels'), orderBy('savedAt', 'desc')));
+        setSavedHotels(snap.docs.map(d => d.data().hotelData));
+      } catch (err) {
+        console.error("Failed to load saved hotels:", err);
+      } finally {
+        setLoadingHotels(false);
+      }
+    };
+    loadSaved();
   }, [user, navigate]);
 
   const handleSave = async () => {
-    console.log("handleSave called, user:", user?.uid, "prefs:", prefs);
     if (!user) {
       toast.error("Not signed in — please sign in and try again.");
       return;
@@ -1391,6 +1404,28 @@ const Profile = () => {
             {saving && <Loader2 className="w-4 h-4 animate-spin" />}
             Save Preferences
           </button>
+        </div>
+
+        <div className="bg-white/5 border border-white/10 p-8 rounded-3xl">
+          <label className="block text-xs uppercase tracking-widest font-bold text-white/40 mb-6">Saved Hotels</label>
+          {loadingHotels ? (
+            <div className="flex items-center gap-2 text-white/40"><Loader2 className="w-4 h-4 animate-spin" /> Loading...</div>
+          ) : savedHotels.length === 0 ? (
+            <p className="text-white/40">No saved hotels yet. Click the heart icon on any hotel to save it.</p>
+          ) : (
+            <div className="space-y-4">
+              {savedHotels.map((hotel: any) => (
+                <Link key={hotel.hotelId} to={`/hotel/${hotel.hotelId}`} className="flex items-center gap-4 bg-white/5 rounded-2xl p-4 hover:bg-white/10 transition-colors">
+                  <img src={hotel.image} alt={hotel.name} className="w-20 h-16 object-cover rounded-xl flex-shrink-0" referrerPolicy="no-referrer" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white font-semibold truncate">{hotel.name}</p>
+                    <p className="text-white/40 text-sm">{hotel.address?.cityName} · {hotel.starRating > 0 ? `${hotel.starRating}★` : ''} {hotel.avgRating > 0 ? `${hotel.avgRating}/10` : ''}</p>
+                  </div>
+                  <p className="text-white font-bold flex-shrink-0">${Math.round(hotel.price)}<span className="text-white/40 text-xs font-normal">/night</span></p>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="bg-white/5 border border-white/10 p-8 rounded-3xl">
