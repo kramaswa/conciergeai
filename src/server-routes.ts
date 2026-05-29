@@ -527,7 +527,7 @@ Rules: no markdown, no asterisks, plain text only. Never state a fact not deriva
 
   app.get("/api/hotels/:hotelId/details", async (req, res) => {
     const { hotelId } = req.params;
-    const { checkIn, checkOut, adults } = req.query as any;
+    const { checkIn, checkOut, adults, name, stars, rating, city, amenities } = req.query as any;
     const serpApiKey = process.env.SERPAPI_KEY;
 
     if (!serpApiKey) {
@@ -575,11 +575,11 @@ Rules: no markdown, no asterisks, plain text only. Never state a fact not deriva
         : [];
 
       let description = data.description || "";
-      if (!description && data.name) {
-        const amenityList = (data.amenities || []).slice(0, 6).join(", ");
-        const stars = data.hotel_class ? `${data.hotel_class}-star` : "";
-        const rating = data.overall_rating ? `${(data.overall_rating * 2).toFixed(1)}/10 guest rating` : "";
-        const prompt = `Write a 2-3 sentence hotel description for "${data.name}", a ${stars} hotel. ${amenityList ? `Amenities include: ${amenityList}.` : ""} ${rating ? `It has a ${rating}.` : ""} Be factual, warm, and professional. No markdown.`;
+      if (!description && name) {
+        const starLabel = stars ? `${stars}-star` : "";
+        const ratingLabel = rating ? `${parseFloat(rating).toFixed(1)}/10 guest rating` : "";
+        const cityLabel = city ? `in ${city}` : "";
+        const prompt = `Write a 2-3 sentence hotel description for "${name}", a ${starLabel} hotel ${cityLabel}. ${amenities ? `Amenities include: ${amenities}.` : ""} ${ratingLabel ? `It has a ${ratingLabel}.` : ""} Be factual, warm, and professional. No markdown.`;
         try {
           const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
           const msg = await anthropic.messages.create({

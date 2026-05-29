@@ -541,7 +541,14 @@ const HotelDetailPage = () => {
   useEffect(() => {
     if (!hotelId) return;
     setLoadingDetails(true);
-    fetch(`/api/hotels/${hotelId}/details`)
+    const params = new URLSearchParams();
+    if (hotel?.name) params.set('name', hotel.name);
+    if (hotel?.starRating) params.set('stars', String(hotel.starRating));
+    if (hotel?.avgRating) params.set('rating', String(hotel.avgRating));
+    if (hotel?.address?.cityName) params.set('city', hotel.address.cityName);
+    const amenities = [hotel?.breakfast && 'Free Breakfast', hotel?.pool && 'Pool', hotel?.gym && 'Gym', hotel?.wifi && 'Free WiFi'].filter(Boolean).join(', ');
+    if (amenities) params.set('amenities', amenities);
+    fetch(`/api/hotels/${hotelId}/details?${params.toString()}`)
       .then(r => r.json())
       .then((d: HotelDetails) => setDetails(d))
       .catch(() => setDetails(null))
