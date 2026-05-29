@@ -535,25 +535,23 @@ Rules: no markdown, no asterisks, plain text only. Never state a fact not deriva
     }
 
     try {
-      const params = new URLSearchParams({
-        engine: "google_hotels_property",
-        property_token: hotelId,
-        currency: "USD",
-        gl: "us",
-        hl: "en",
-        api_key: serpApiKey
-      });
-
-      if (checkIn) params.set("check_in_date", checkIn);
-      if (checkOut) params.set("check_out_date", checkOut);
-      if (adults) params.set("adults", adults);
-
-      const resp = await fetch(`https://serpapi.com/search.json?${params.toString()}`);
-      if (!resp.ok) {
-        return res.status(502).json({ error: "Property details unavailable" });
-      }
-
-      const data = await resp.json();
+      // Attempt SerpApi property lookup — may fail for many tokens
+      let data: any = {};
+      try {
+        const serpParams = new URLSearchParams({
+          engine: "google_hotels_property",
+          property_token: hotelId,
+          currency: "USD",
+          gl: "us",
+          hl: "en",
+          api_key: serpApiKey
+        });
+        if (checkIn) serpParams.set("check_in_date", checkIn);
+        if (checkOut) serpParams.set("check_out_date", checkOut);
+        if (adults) serpParams.set("adults", adults);
+        const resp = await fetch(`https://serpapi.com/search.json?${serpParams.toString()}`);
+        if (resp.ok) data = await resp.json();
+      } catch { /* SerpApi unavailable — fall through to Claude description */ }
 
       const photos = (data.images || [])
         .slice(0, 25)
@@ -562,7 +560,6 @@ Rules: no markdown, no asterisks, plain text only. Never state a fact not deriva
 
       const facilities = (data.amenities || []).map((a: string) => ({ name: a }));
 
-      // reviews_breakdown in SerpApi property response uses 0-5 scale
       const breakdown = data.reviews_breakdown || [];
       const reviewBreakdown = Array.isArray(breakdown)
         ? breakdown
@@ -588,8 +585,8 @@ Rules: no markdown, no asterisks, plain text only. Never state a fact not deriva
             messages: [{ role: "user", content: prompt }],
           });
           description = (msg.content[0] as any).text?.trim() || "";
-        } catch {
-          description = "";
+        } catch (e) {
+          console.error("Description generation failed:", e);
         }
       }
 
